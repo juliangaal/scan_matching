@@ -33,7 +33,7 @@ def Rot3D(vecin, alpha, beta, gamma, x, y, z):
 
 
 def NanInfScale(cloud, scale):
-    points = scale* np.asarray(cloud.points)
+    points = scale * np.asarray(cloud.points)
     #points = points[~np.isnan(points)]
     #points = points[~np.isinf(points)]
     #points = points.reshape(-1,3)
