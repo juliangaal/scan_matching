@@ -61,11 +61,10 @@ int main(void)
     ICP_LM icp(4, 1, 20);
     icp.align(model, scene, centroid);
 
-    Viewer viewer("PCL Viewer");
-    viewer.add_pointcloud("model cloud", model, 3.0, 0, 0, 255);
-    viewer.add_pointcloud("scene cloud", scene, 4.0, 255, 0, 0);
-    viewer.show_viewer();
-
+//    Viewer viewer("PCL Viewer");
+//    viewer.add_pointcloud("model cloud", model, 3.0, 0, 0, 255);
+//    viewer.add_pointcloud("scene cloud", scene, 4.0, 255, 0, 0);
+//    viewer.show_viewer();
 
 
     return 0;
