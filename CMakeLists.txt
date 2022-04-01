@@ -11,9 +11,6 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(PCL 1.8 REQUIRED)
 find_package(Boost 1.54 COMPONENTS filesystem system program_options REQUIRED)
 
-add_library(pcd_file src/pcd_file.cpp)
-target_include_directories(pcd_file PRIVATE ${Eigen3_INCLUDE_DIRS} src)
-
 add_library(icp_LM src/icp_LM.cpp src/viewer.cpp)
 target_include_directories(icp_LM PRIVATE ${Eigen3_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} src)
 target_link_libraries(icp_LM PUBLIC fmt::fmt ${PCL_LIBRARIES})

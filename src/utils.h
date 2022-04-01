@@ -1,11 +1,13 @@
 #pragma once
 
 #include <tuple>
+#include <chrono>
 #include <Eigen/Dense>
 #include <pcl/point_types.h>
 
 using State = Eigen::Matrix<float, 6, 1>;
 using Hessian = Eigen::Matrix<float, 6, 6>;
+using Clock = std::chrono::steady_clock;
 
 namespace Eigen
 {
@@ -20,6 +22,25 @@ public:
     NotImplementedException() : std::logic_error("Function not yet implemented.") {}
 };
 }
+
+struct StopWatch
+{
+    StopWatch() : _start(Clock::now()) {}
+    ~StopWatch() = default;
+    
+    template <typename T>
+    double stop()
+    {
+        return std::chrono::duration_cast<T>(Clock::now() - _start).count();
+    }
+    
+    void reset()
+    {
+        _start = Clock::now();
+    }
+    
+    std::chrono::time_point<std::chrono::steady_clock> _start;
+};
 
 /**
  * Convert state (euler angles + translation vector)
@@ -71,7 +92,7 @@ std::tuple<Eigen::Matrix3f, Eigen::Vector3f> state_2_rot_trans(const State& stat
  * @param R
  * @param t
  */
-void rot_trans_2_state(State& state, const Eigen::Matrix3f R, const Eigen::Vector3f t)
+void rot_trans_2_state(State& state, const Eigen::Matrix3f& R, const Eigen::Vector3f& t)
 {
 //    state[0] = std::atan2(R(2,1),R(2,2));
 //    state[1] = std::atan2(-R(2,0), std::pow( R(2,1)*R(2,1) +R(2,2)*R(2,2) ,0.5));

@@ -27,7 +27,6 @@ Viewer::add_pointcloud(std::string id, const pcl::PointCloud<pcl::PointXYZ>::Ptr
                                int b)
 {
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, r, g, b);
-    viewer.addPointCloud<pcl::PointXYZ> (cloud, single_color, "sample cloud");
     viewer.addPointCloud<pcl::PointXYZ>(cloud, single_color, id);
     set_point_size(id, size);
 }

@@ -5,11 +5,11 @@
 
 struct ICP_LM
 {
-    ICP_LM(int grid_size, int distance_threshold, int iterations);
+    ICP_LM(float grid_size, int distance_threshold, int iterations);
     ~ICP_LM() = default;
 
-    void align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::PointCloud<pcl::PointXYZ>::Ptr &scene,
-               Eigen::Vector4f &centroid);
+    Eigen::Matrix4f align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::PointCloud<pcl::PointXYZ>::Ptr &scene,
+                          Eigen::Vector4f &centroid);
 
     int _grid_size;
     int _distance_threshold;

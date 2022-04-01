@@ -12,7 +12,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/features/normal_3d_omp.h>
 
-ICP_LM::ICP_LM(int grid_size, int distance_threshold, int iterations)
+ICP_LM::ICP_LM(float grid_size, int distance_threshold, int iterations)
 : _grid_size(grid_size)
 , _distance_threshold(distance_threshold)
 , _iterations(iterations)
@@ -20,20 +20,22 @@ ICP_LM::ICP_LM(int grid_size, int distance_threshold, int iterations)
 {
 }
 
-void ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::PointCloud<pcl::PointXYZ>::Ptr &scene,
-                   Eigen::Vector4f &centroid)
+Eigen::Matrix4f ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::PointCloud<pcl::PointXYZ>::Ptr &scene,
+                              Eigen::Vector4f &centroid)
 {
-    fmt::print("test\n");
+    StopWatch time, total_time;
+    
     // voxel filtering (model)
     pcl::VoxelGrid<pcl::PointXYZ> sor;
     sor.setInputCloud(model);
     sor.setLeafSize (_grid_size, _grid_size, _grid_size);
     sor.filter(*model);
+    fmt::print("Shrunk model to {} points\n", model->size());
 
     // voxel filter (scene)
     sor.setInputCloud(scene);
-    sor.setLeafSize (_grid_size, _grid_size, _grid_size);
     sor.filter(*scene);
+    fmt::print("Shrunk scene to {} points\n", scene->size());
 
     // calculate normals
     pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> ne;
@@ -47,9 +49,14 @@ void ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::PointCloud<p
     ne.compute(*normals);
 
     float lambda = 1e-2;
-
+    
+    fmt::print("preprocessing took {}ms\n", time.stop<std::chrono::milliseconds>());
+    Eigen::Matrix3f R;
+    Eigen::Vector3f t;
+    
     for (int j = 0; j < _iterations; j++)
     {
+        time.reset();
         // for every point in scene, get closest point in model
         std::vector<int> indices(scene->size());
         std::iota(indices.begin(), indices.end(), 0);
@@ -61,7 +68,7 @@ void ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::PointCloud<p
         Hessian H = Hessian::Zero();
         State gradient = State::Zero();
 
-        auto [ R, t ] = state_2_rot_trans(_state);
+        std::tie(R, t) = state_2_rot_trans(_state);
         float chi = 0.f;
 
         // correspondences (nearest neighbor, normals) are calculated
@@ -108,17 +115,23 @@ void ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::PointCloud<p
             _state = state_new;
             lambda /= 10;
         }
-
-        fmt::print("Error: {}, lambda: {}\n", chi / (float)point_idx_search.size(), lambda);
-
+    
         std::tie(R, t) = state_2_rot_trans(_state);
-
+    
         Eigen::Matrix4f pcl_transform = Eigen::Matrix4f::Identity();
         pcl_transform.block<3, 3>(0, 0) = R;
         pcl_transform.block<3, 1>(0, 3) = t;
-
+    
         // update pcl for next iteration
         pcl::transformPointCloud(*scene, *scene, pcl_transform);
+        
+        fmt::print("it: {}, err: {} in {}ms\n", j, chi / (float)point_idx_search.size(), time.stop<std::chrono::milliseconds>());
     }
+    fmt::print("total processing time {}ms\n", total_time.stop<std::chrono::milliseconds>());
+    
+    Eigen::Matrix4f final_transform = Eigen::Matrix4f::Identity();
+    final_transform.block<3, 3>(0, 0) = R;
+    final_transform.block<3, 1>(0, 3) = t;
+    return final_transform;
 }
 
