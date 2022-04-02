@@ -76,31 +76,32 @@ int main()
     pcl::copyPointCloud(*scene, *origin_scene);
     
     // voxel filtering
-    pcl::VoxelGrid<pcl::PointXYZ> sor;
-    sor.setInputCloud(origin_model);
-    sor.setLeafSize (grid_size, grid_size, grid_size);
-    sor.filter(*origin_model);
-    sor.setInputCloud(origin_scene);
-    sor.filter(*origin_scene);
-    
-    // transform
-    Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-    transform(0, 3) -= .2f * scale;
-    pcl::transformPointCloud(*origin_model, *origin_model, transform);
-    pcl::transformPointCloud(*origin_scene, *origin_scene, transform);
+//    pcl::VoxelGrid<pcl::PointXYZ> sor;
+//    sor.setInputCloud(origin_model);
+//    sor.setLeafSize (grid_size, grid_size, grid_size);
+//    sor.filter(*origin_model);
+//    sor.setInputCloud(origin_scene);
+//    sor.filter(*origin_scene);
 
     /**
      * Run ICP
      * args: grid_size, dist_thresh, iterations, model, scene, viewer
     */
     ICP_LM icp(grid_size, 1, iterations);
-    icp.align(model, scene, centroid);
-
+    Eigen::Matrix4f transform = icp.align(model, scene, centroid);
+    pcl::transformPointCloud(*origin_scene, *origin_scene, transform);
+    
+    // transform out of the way (for visualizaton only)
+//    Eigen::Matrix4f viz_transform = Eigen::Matrix4f::Identity();
+//    viz_transform(0, 3) -= .2f * scale;
+//    pcl::transformPointCloud(*origin_model, *origin_model, viz_transform);
+//    pcl::transformPointCloud(*origin_scene, *origin_scene, viz_transform);
+    
     Viewer viewer("PCL Viewer");
-    viewer.add_pointcloud("model cloud", model, 3.0, 0, 0, 255);
-    viewer.add_pointcloud("scene cloud", scene, 3.0, 255, 0, 0);
-    viewer.add_pointcloud("model cloud original", origin_model, 3.0, 0, 0, 255);
-    viewer.add_pointcloud("scene cloud original", origin_scene, 3.0, 255, 0, 0);
+//    viewer.add_pointcloud("model cloud", model, 3.0, 0, 0, 255);
+//    viewer.add_pointcloud("scene cloud", scene, 3.0, 255, 0, 0);
+    viewer.add_pointcloud("model cloud original", origin_model, 1.0, 0, 0, 255);
+    viewer.add_pointcloud("scene cloud original", origin_scene, 1.0, 255, 0, 0);
     viewer.show_viewer();
     
     return 0;

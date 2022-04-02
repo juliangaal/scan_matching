@@ -11,7 +11,7 @@ struct ICP_LM
     Eigen::Matrix4f align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::PointCloud<pcl::PointXYZ>::Ptr &scene,
                           Eigen::Vector4f &centroid);
 
-    int _grid_size;
+    float _grid_size;
     int _distance_threshold;
     int _iterations;
     Eigen::Matrix<float, 6, 1> _state;

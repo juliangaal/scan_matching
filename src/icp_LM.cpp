@@ -51,8 +51,8 @@ Eigen::Matrix4f ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::P
     float lambda = 1e-2;
     
     fmt::print("preprocessing took {}ms\n", time.stop<std::chrono::milliseconds>());
-    Eigen::Matrix3f R;
-    Eigen::Vector3f t;
+    Eigen::Matrix3f R = Eigen::Matrix3f::Identity();
+    Eigen::Vector3f t = Eigen::Vector3f::Zero();
     
     for (int j = 0; j < _iterations; j++)
     {
@@ -60,27 +60,26 @@ Eigen::Matrix4f ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::P
         // for every point in scene, get closest point in model
         std::vector<int> indices(scene->size());
         std::iota(indices.begin(), indices.end(), 0);
-        std::vector<std::vector<int>> nns;
-        std::vector<std::vector<int>> point_idx_search(scene->size());
+        std::vector<std::vector<int>> correspondences(scene->size());
         std::vector<std::vector<float>> point_squared_distance(scene->size());
-        tree->nearestKSearch(*scene, indices, 1, point_idx_search, point_squared_distance);
+        tree->nearestKSearch(*scene, indices, 1, correspondences, point_squared_distance);
 
         Hessian H = Hessian::Zero();
         State gradient = State::Zero();
 
-        std::tie(R, t) = state_2_rot_trans(_state);
+        auto [ R_hat, t_hat ] = state_2_rot_trans(_state);
         float chi = 0.f;
 
         // correspondences (nearest neighbor, normals) are calculated
-        for (int i = 0; i < point_idx_search.size(); ++i)
+        for (int i = 0; i < scene->size(); ++i)
         {
             const Eigen::Vector3f &scene_point = ((*scene)[i]).getVector3fMap();
-            const Eigen::Vector3f &corr_point = ((*model)[point_idx_search[i][0]]).getVector3fMap();
-            const Eigen::Vector3f &corr_normal = ((*normals)[point_idx_search[i][0]]).getNormalVector3fMap();
-
+            const Eigen::Vector3f &corr_point = ((*model)[correspondences[i][0]]).getVector3fMap();
+            const Eigen::Vector3f &corr_normal = ((*normals)[correspondences[i][0]]).getNormalVector3fMap();
+            
             // rotate scene point with current best guess
-            auto rot_scene_point = R * scene_point;
-            float error = (rot_scene_point + t - corr_point).dot(corr_normal);
+            auto rot_scene_point = R_hat * scene_point;
+            float error = (rot_scene_point + t_hat - corr_point).dot(corr_normal);
 
             Eigen::Vector6f J = jacobian_plane(rot_scene_point, corr_normal);
             H += J.transpose() * J;
@@ -95,12 +94,12 @@ Eigen::Matrix4f ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::P
 
         float chi_new = 0;
 
-        for (int i = 0; i < point_idx_search.size(); ++i)
+        for (int i = 0; i < scene->size(); ++i)
         {
             const Eigen::Vector3f &scene_point = ((*scene)[i]).getVector3fMap();
-            const Eigen::Vector3f &corr_point = ((*model)[point_idx_search[i][0]]).getVector3fMap();
-            const Eigen::Vector3f &corr_normal = ((*normals)[point_idx_search[i][0]]).getNormalVector3fMap();
-
+            const Eigen::Vector3f &corr_point = ((*model)[correspondences[i][0]]).getVector3fMap();
+            const Eigen::Vector3f &corr_normal = ((*normals)[correspondences[i][0]]).getNormalVector3fMap();
+            
             auto rot_scene_point_new = R_new * scene_point;
             float error_new = (rot_scene_point_new + t_new - corr_point).dot(corr_normal);
             chi_new += std::abs(error_new);
@@ -116,16 +115,19 @@ Eigen::Matrix4f ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::P
             lambda /= 10;
         }
     
-        std::tie(R, t) = state_2_rot_trans(_state);
+        std::tie(R_hat, t_hat) = state_2_rot_trans(_state);
     
         Eigen::Matrix4f pcl_transform = Eigen::Matrix4f::Identity();
-        pcl_transform.block<3, 3>(0, 0) = R;
-        pcl_transform.block<3, 1>(0, 3) = t;
+        pcl_transform.block<3, 3>(0, 0) = R_hat;
+        pcl_transform.block<3, 1>(0, 3) = t_hat;
     
         // update pcl for next iteration
         pcl::transformPointCloud(*scene, *scene, pcl_transform);
         
-        fmt::print("it: {}, err: {} in {}ms\n", j, chi / (float)point_idx_search.size(), time.stop<std::chrono::milliseconds>());
+        R = R * R_new;
+        t = R_new * t + t_new;
+        
+        fmt::print("it: {}, err: {} in {}ms\n", j, chi / (float)correspondences.size(), time.stop<std::chrono::milliseconds>());
     }
     fmt::print("total processing time {}ms\n", total_time.stop<std::chrono::milliseconds>());
     
