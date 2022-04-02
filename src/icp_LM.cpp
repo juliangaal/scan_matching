@@ -53,6 +53,7 @@ Eigen::Matrix4f ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::P
     fmt::print("preprocessing took {}ms\n", time.stop<std::chrono::milliseconds>());
     Eigen::Matrix3f R = Eigen::Matrix3f::Identity();
     Eigen::Vector3f t = Eigen::Vector3f::Zero();
+    std::tie(R, t) = state_2_rot_trans(_state);
     
     for (int j = 0; j < _iterations; j++)
     {
@@ -93,7 +94,8 @@ Eigen::Matrix4f ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::P
         auto [ R_new, t_new ] = state_2_rot_trans(state_new);
 
         float chi_new = 0;
-
+        
+        // recalculate error
         for (int i = 0; i < scene->size(); ++i)
         {
             const Eigen::Vector3f &scene_point = ((*scene)[i]).getVector3fMap();
@@ -121,11 +123,11 @@ Eigen::Matrix4f ICP_LM::align(pcl::PointCloud<pcl::PointXYZ>::Ptr &model, pcl::P
         pcl_transform.block<3, 3>(0, 0) = R_hat;
         pcl_transform.block<3, 1>(0, 3) = t_hat;
     
+        R = R_hat * R;
+        t = R_hat * t + t_hat;
+    
         // update pcl for next iteration
         pcl::transformPointCloud(*scene, *scene, pcl_transform);
-        
-        R = R * R_new;
-        t = R_new * t + t_new;
         
         fmt::print("it: {}, err: {} in {}ms\n", j, chi / (float)correspondences.size(), time.stop<std::chrono::milliseconds>());
     }
