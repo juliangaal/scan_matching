@@ -6,12 +6,15 @@
 #include "icp_LM.h"
 #include "utils.h"
 
+#include <thread>
 #include <pcl/common/centroid.h>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/common/transforms.h>
+
+using namespace std::chrono_literals;
 
 template <typename T>
 Eigen::Vector4f preprocess(typename pcl::PointCloud<T>::Ptr &cloud, float scale = 1000.f)
@@ -56,40 +59,52 @@ int main()
      * - copy original model and scene cloud
      * - transform to side for viewing side by side in viewer
      */
-    pcl::PointCloud<pcl::PointXYZ>::Ptr origin_model(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::copyPointCloud(*model, *origin_model);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr model_t(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::copyPointCloud(*model, *model_t);
     
-    pcl::PointCloud<pcl::PointXYZ>::Ptr origin_scene(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::copyPointCloud(*scene, *origin_scene);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr scene_t(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::copyPointCloud(*scene, *scene_t);
     
     // voxel filtering
     pcl::VoxelGrid<pcl::PointXYZ> sor;
-    sor.setInputCloud(origin_model);
+    sor.setInputCloud(model_t);
     sor.setLeafSize (grid_size, grid_size, grid_size);
-    sor.filter(*origin_model);
-    sor.setInputCloud(origin_scene);
-    sor.filter(*origin_scene);
+    sor.filter(*model_t);
+    sor.setInputCloud(scene_t);
+    sor.filter(*scene_t);
 
     /**
      * Run ICP
      * args: grid_size, dist_thresh, iterations, model, scene, viewer
     */
     ICP_LM icp(grid_size, 1, iterations);
-    Eigen::Matrix4f transform = icp.align(model, scene, centroid);
-    pcl::transformPointCloud(*origin_scene, *origin_scene, transform);
+    icp.set_model(model);
+    Eigen::Matrix4f transform = icp.align(scene);
+    pcl::transformPointCloud(*scene_t, *scene_t, transform);
     
-    // transform out of the way (for visualization only)
-    Eigen::Matrix4f viz_transform = Eigen::Matrix4f::Identity();
-    viz_transform(0, 3) += .2f * scale;
-    pcl::transformPointCloud(*model, *model, viz_transform);
-    pcl::transformPointCloud(*scene, *scene, viz_transform);
     
-    Viewer viewer("PCL Viewer");
-//    viewer.add_pointcloud("model cloud", model, 1.0, 0, 0, 255);
-//    viewer.add_pointcloud("scene cloud", scene, 1.0, 255, 0, 0);
-    viewer.add_pointcloud("model cloud original", origin_model, 1.0, 0, 0, 255);
-    viewer.add_pointcloud("scene cloud original", origin_scene, 1.0, 255, 0, 0);
-    viewer.show_viewer();
+    pcl::visualization::PCLVisualizer viewer("PCL Viewer");
+    int v1(0);
+    int v2(1);
+    viewer.createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+    viewer.createViewPort(0.5, 0.0, 3.0, 1.0, v2);
+    viewer.setCameraPosition(-400.539, 381.124, 460.384, 0.285877, 0.868995, -0.403883, 0);
+    
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> model_color(model, 0, 0, 255);
+    viewer.addPointCloud(model, model_color, "model_color", v1);
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> scene_color(scene, 255, 0, 0);
+    viewer.addPointCloud(scene, scene_color, "scene_color", v1);
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> model_color_t(model_t, 0, 0, 255);
+    viewer.addPointCloud(model_t, model_color_t, "model_color_t", v2);
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> scene_color_t(scene_t, 255, 0, 0);
+    viewer.addPointCloud(scene_t, scene_color_t, "scene_color_t", v2);
+    viewer.addCoordinateSystem();
+    
+    while (!viewer.wasStopped())
+    {
+        viewer.spinOnce(100);
+        std::this_thread::sleep_for(100ms);
+    }
     
     return 0;
 }
