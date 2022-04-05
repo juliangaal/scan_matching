@@ -4,14 +4,13 @@
 
 #include "viewer.h"
 #include "icp_LM.h"
+#include "utils.h"
 
 #include <pcl/common/centroid.h>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <fmt/printf.h>
 #include <pcl/common/transforms.h>
 
 template <typename T>
@@ -35,18 +34,6 @@ Eigen::Vector4f preprocess(typename pcl::PointCloud<T>::Ptr &cloud, float scale 
     }
 
     return centroid;
-}
-
-template <typename T>
-void file2pcd(typename pcl::PointCloud<T>::Ptr& cloud, std::string filename)
-{
-    if (pcl::io::loadPCDFile<T>(filename, *cloud) == -1)
-    {
-        fmt::print("Couldn't read file {}\n", filename);
-        throw std::runtime_error("PCL IO Error");
-    }
-    
-    fmt::print("Loaded {} with {} points\n", filename, cloud->size());
 }
 
 int main()

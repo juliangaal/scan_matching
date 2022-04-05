@@ -3,6 +3,7 @@
 #include <tuple>
 #include <chrono>
 #include <Eigen/Dense>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
 using State = Eigen::Matrix<float, 6, 1>;
@@ -42,12 +43,21 @@ struct StopWatch
     std::chrono::time_point<std::chrono::steady_clock> _start;
 };
 
+template <typename T>
+inline void file2pcd(typename pcl::PointCloud<T>::Ptr& cloud, const std::string& filename)
+{
+    if (pcl::io::loadPCDFile<T>(filename, *cloud) == -1)
+    {
+        throw std::runtime_error("PCL IO Error");
+    }
+}
+
 /**
  * Convert state (euler angles + translation vector)
  * to rotation matrix (right handed!) and translation vector
  * @return tuple of rotation matrix + translation vector
  */
-std::tuple<Eigen::Matrix3f, Eigen::Vector3f> state_2_rot_trans(const State& state)
+inline std::tuple<Eigen::Matrix3f, Eigen::Vector3f> state_2_rot_trans(const State& state)
 {
 //    const auto& roll = state[0];
 //    const auto& pitch = state[1];
@@ -92,7 +102,7 @@ std::tuple<Eigen::Matrix3f, Eigen::Vector3f> state_2_rot_trans(const State& stat
  * @param R
  * @param t
  */
-void rot_trans_2_state(State& state, const Eigen::Matrix3f& R, const Eigen::Vector3f& t)
+inline void rot_trans_2_state(State& state, const Eigen::Matrix3f& R, const Eigen::Vector3f& t)
 {
 //    state[0] = std::atan2(R(2,1),R(2,2));
 //    state[1] = std::atan2(-R(2,0), std::pow( R(2,1)*R(2,1) +R(2,2)*R(2,2) ,0.5));
@@ -125,7 +135,7 @@ void rot_trans_2_state(State& state, const Eigen::Matrix3f& R, const Eigen::Vect
     state[5] = t.z();
 }
 
-Eigen::Vector6f jacobian_plane(const Eigen::Vector3f& point, const Eigen::Vector3f& n)
+inline Eigen::Vector6f jacobian_plane(const Eigen::Vector3f& point, const Eigen::Vector3f& n)
 {
     Eigen::Vector6f J = Eigen::Vector6f::Zero();
     J.block<1, 3>(0, 3) = n;
@@ -133,7 +143,7 @@ Eigen::Vector6f jacobian_plane(const Eigen::Vector3f& point, const Eigen::Vector
     return J;
 }
 
-Eigen::Vector6f jacobian_plane(const Eigen::Vector3f& point, const pcl::Normal& pcl_n)
+inline Eigen::Vector6f jacobian_plane(const Eigen::Vector3f& point, const pcl::Normal& pcl_n)
 {
     return jacobian_plane(point, pcl_n.getNormalVector3fMap());
 }

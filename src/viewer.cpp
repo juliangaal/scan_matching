@@ -36,12 +36,6 @@ void Viewer::set_point_size(std::string id, double size)
     viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, id);
 }
 
-void Viewer::add_normals(std::string id, const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &cloud,
-                         const pcl::PointCloud<pcl::Normal>::Ptr &normals, int level, float scale)
-{
-    viewer.addPointCloudNormals<pcl::PointXYZRGBA, pcl::Normal>(cloud, normals, level, scale, id);
-}
-
 void Viewer::show_viewer()
 {
     viewer.addCoordinateSystem();

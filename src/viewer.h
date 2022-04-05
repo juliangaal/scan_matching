@@ -25,10 +25,13 @@ public:
                            int b);
 
     void set_point_size(std::string id, double size);
-    
-    void
-    add_normals(std::string id, const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &cloud,
-                const pcl::PointCloud<pcl::Normal>::Ptr &normals, int level, float scale);
+
+    template <typename T>
+    inline void add_normals(std::string id, const typename pcl::PointCloud<T>::Ptr &cloud,
+                const pcl::PointCloud<pcl::Normal>::Ptr &normals, int level, float scale)
+    {
+        viewer.addPointCloudNormals<T, pcl::Normal>(cloud, normals, level, scale, id);
+    }
     
     void show_viewer();
     
