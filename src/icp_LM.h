@@ -48,7 +48,7 @@ struct ICP_LM
     Eigen::Matrix4f align(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &scene);
     Eigen::Matrix4f align_ceres(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &scene);
 
-    int _distance_threshold;
+    float _distance_threshold;
     int _iterations;
     Eigen::Matrix<float, 6, 1> _state;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _model;

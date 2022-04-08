@@ -166,12 +166,11 @@ Eigen::Matrix4f ICP_LM::align_ceres(const pcl::PointCloud<pcl::PointXYZ>::ConstP
 
     fmt::print("preprocessing took {}ms\n", time.stop<std::chrono::milliseconds>());
 
-    Eigen::Quaterniond q_w_curr(1, 0, 0, 0);
-    Eigen::Vector3d t_w_curr(0, 0, 0);
-    double para_q[4] = {0, 0, 0, 1};
-    double para_t[3] = {0, 0, 0};
-    Eigen::Map<Eigen::Quaterniond> q_last_curr(para_q);
-    Eigen::Map<Eigen::Vector3d> t_last_curr(para_t);
+    Eigen::Quaterniond q_w_curr = Eigen::Quaterniond::Identity();
+    Eigen::Vector3d t_w_curr = Eigen::Vector3d::Zero();
+
+    auto q_last_curr = Eigen::Quaterniond::Identity();
+    auto t_last_curr = Eigen::Vector3d::Zero();
 
     size_t skips = 0;
 
@@ -183,8 +182,8 @@ Eigen::Matrix4f ICP_LM::align_ceres(const pcl::PointCloud<pcl::PointXYZ>::ConstP
         ceres::Problem::Options problem_options;
 
         ceres::Problem problem(problem_options);
-        problem.AddParameterBlock(para_q, 4, q_parameterization);
-        problem.AddParameterBlock(para_t, 3);
+        problem.AddParameterBlock(q_w_curr.coeffs().data(), 4, q_parameterization);
+        problem.AddParameterBlock(t_w_curr.data(), 3);
 
         time.reset();
         // for every point in scene, get closest point in model
@@ -211,7 +210,7 @@ Eigen::Matrix4f ICP_LM::align_ceres(const pcl::PointCloud<pcl::PointXYZ>::ConstP
             }
 
             ceres::CostFunction *cost_function = Point2PlaneFactor::Create(scene_point.cast<double>(), corr_point.cast<double>(), corr_normal.cast<double>());
-            problem.AddResidualBlock(cost_function, loss_function, para_q, para_t);
+            problem.AddResidualBlock(cost_function, loss_function, q_w_curr.coeffs().data(), t_w_curr.data());
         }
 
         StopWatch t_solver;
