@@ -28,9 +28,13 @@ add_executable(pcd_alignment_ceres src/pcd_alignment_ceres.cpp)
 target_include_directories(pcd_alignment_ceres PRIVATE ${PCL_INCLUDE_DIRS} src)
 target_link_libraries(pcd_alignment_ceres PRIVATE icp_LM viewer)
 
-#add_executable(continuous_icp src/continuous_icp.cpp)
-#target_include_directories(continuous_icp PRIVATE ${PCL_INCLUDE_DIRS} src)
-#target_link_libraries(continuous_icp PRIVATE icp_LM)
+add_executable(continuous_pcd_alignment src/continuous_pcd_alignment.cpp)
+target_include_directories(continuous_pcd_alignment PRIVATE ${PCL_INCLUDE_DIRS} src)
+target_link_libraries(continuous_pcd_alignment PRIVATE icp_LM)
+
+add_executable(extract_features src/extract_features.cpp)
+target_include_directories(extract_features PRIVATE ${PCL_INCLUDE_DIRS} src)
+target_link_libraries(extract_features PRIVATE viewer fmt::fmt)
 
 add_executable(test test/test.cpp)
 target_include_directories(test PRIVATE ${Eigen3_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${Catch2_INCLUDE_DIRS} src)

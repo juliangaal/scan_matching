@@ -1,0 +1,8 @@
+//
+// Created by julian on 08.04.22.
+//
+
+#ifndef ICP_CONCURRENT_RING_BUFFER_H
+#define ICP_CONCURRENT_RING_BUFFER_H
+
+#endif //ICP_CONCURRENT_RING_BUFFER_H
