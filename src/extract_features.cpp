@@ -25,21 +25,15 @@ int main()
     file2pcd<pcl::PointXYZ>(orig_cloud, "/media/glumanda/ouster/128_foyer_1_stair/pcds/frame_100.pcd");
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
-//    pcl::copyPointCloud(*orig_cloud, *cloud);
+    pcl::copyPointCloud(*orig_cloud, *cloud);
     pcl::PointCloud<pcl::PointXYZ>::Ptr edge_cloud(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::PointCloud<pcl::PointXYZ>::Ptr surf_cloud(new pcl::PointCloud<pcl::PointXYZ>());
 
 
     auto width = 1024;
-    auto height = 1;
-    float edge_threshold = 0.2;
-    float surf_threshold = 0.1;
-
-    for (int v = 0; v < width; ++v)
-    {
-        const auto& p = orig_cloud->points[64 * width + v];
-        cloud->points.push_back(p);
-    }
+    auto height = 128;
+    float edge_threshold = 0.5;
+    float surf_threshold = 0.005;
     
     std::vector<Feature> features;
     features.resize(width * height);
@@ -107,34 +101,15 @@ int main()
         }
     }
 
-////    std::sort(features.begin(), features.end(), [&](const auto& f, const auto& f2)
-////    {
-////        return f.curvature < f2.curvature;
-////    });
-//
-////    for (int i = 0; i < 10; ++i)
-////    {
-////        fmt::print("{}\n", features[i].curvature);
-////        surf_cloud->push_back(cloud->points[features[i].idx]);
-////    }
-////
-////    for (int i = features.size(); i > features.size() - 10; --i)
-////    {
-////        fmt::print("{}\n", features[i].curvature);
-////        edge_cloud->push_back(cloud->points[features[i].idx]);
-////    }
-//
-//
-//
     for (int u = 0; u < height; ++u)
     {
         for (int v = 5; v < width - 6; v += (width / 6))
         {
-            auto sp = v;
-            auto ep = v + width / 6;
-            if (ep > width - 6)
+            auto sp = u * width + v;
+            auto ep = sp + width / 6;
+            if (ep >= (u+1) * width)
             {
-                ep = width - 6;
+                ep = (u+1) * width - 6;
             }
 
             std::sort(features.begin()+sp, features.begin()+ep, [&](const auto& f, const auto& f2)
@@ -142,12 +117,13 @@ int main()
                 return f.curvature < f2.curvature;
             });
 
+            int max_edge_features = 20;
             for (int k = ep; k >= sp; --k)
             {
                 size_t idx = features[k].idx;
                 float curvature = features[k].curvature;
 
-                if (curvature > edge_threshold && !neighbor_picked[idx])
+                if (curvature > edge_threshold && !neighbor_picked[idx] && max_edge_features-- != 0)
                 {
                     label[idx] = 1;
                     edge_cloud->push_back(cloud->points[idx]);
@@ -163,11 +139,12 @@ int main()
                 }
             }
 
+            int max_plane_features = 20;
             for (int k = sp; k < ep; ++k)
             {
                 size_t idx = features[k].idx;
                 float curvature = features[k].curvature;
-                if (curvature < surf_threshold && !neighbor_picked[idx])
+                if (curvature < surf_threshold && !neighbor_picked[idx] && max_plane_features-- != 0)
                 {
                     label[idx] = -1;
 
@@ -191,7 +168,7 @@ int main()
 
     fmt::print("Edges: {}, Surf Features: {}\n", edge_cloud->size(), surf_cloud->size());
     Viewer viewer("features");
-    viewer.add_pointcloud("cloud", cloud, 1.0, 255, 255, 255);
+    viewer.add_pointcloud("cloud", cloud, 0.5, 255, 255, 255);
     viewer.add_pointcloud("edges", edge_cloud, 3.0, 255, 0, 0);
     viewer.add_pointcloud("surfs", surf_cloud, 3.0, 255, 255, 0);
     viewer.show_viewer();
