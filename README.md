@@ -1,6 +1,14 @@
 # icp
-Iterative Closest Point solved with Gauss-Newton and Levenberg-Marquardt nonlinear least squares for point-to-point and point-to-plane error metrics. 
-Requires Open3d for PCD import, KDTree, normals calculation 
+
+Point-to-Plane ICP solved with Levenberg-Marquardt optimization strategy. Includes visualization.  
+
+## Dependencies
+
+* Eigen3
+* PCL
+* fmt
+* Boost
+* Catch2 (optional)
 
 ## Credits
 

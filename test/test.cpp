@@ -1,5 +1,4 @@
 #include "utils.h"
-#include "pcd_file.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
@@ -18,32 +17,6 @@ TEST_CASE("Euler", "[euler]")
     point = R * point;
     std::cout << point << "\n";
     std::cout << R << "\n";
-}
-
-TEST_CASE("pcd_file", "[pcd_file]")
-{
-    int RING_SIZE = 5;
-    std::vector<Eigen::Vector3f> ring1;
-    std::vector<Eigen::Vector3f> ring2;
-    std::vector<Eigen::Vector3f> ring3;
-    ring1.resize(RING_SIZE);
-    ring2.resize(RING_SIZE);
-    ring3.resize(RING_SIZE);
-
-    for (int i = 0; i < RING_SIZE; ++i)
-    {
-        ring1[i] = Eigen::Vector3f::Ones();
-        ring2[i] = Eigen::Vector3f::Ones();
-        ring3[i] = Eigen::Vector3f::Ones();
-    }
-
-    std::vector<std::vector<Eigen::Vector3f>> pcl;
-    pcl.push_back(ring1);
-    pcl.push_back(ring2);
-    pcl.push_back(ring2);
-
-    PCDFile file("../data/test.pcd");
-    file.writePoints(pcl);
 }
 
 TEST_CASE("Jacobian", "[jacobian]")

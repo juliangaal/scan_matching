@@ -1,5 +1,6 @@
 #pragma once
 
+#include "viewer.h"
 #include <ceres/ceres.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -42,18 +43,16 @@ struct Point2PlaneFactor
 
 struct ICP_LM
 {
-    ICP_LM(float grid_size, float distance_threshold, int iterations);
+    ICP_LM(const pcl::PointCloud<pcl::PointXYZ>::Ptr &model, float distance_threshold, int iterations);
     ~ICP_LM() = default;
 
-    Eigen::Matrix4f align(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &scene);
-    Eigen::Matrix4f align_ceres(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &scene);
+    Eigen::Matrix4f align(const pcl::PointCloud<pcl::PointXYZ>::Ptr &scene);
+    Eigen::Matrix4f align_ceres(const pcl::PointCloud<pcl::PointXYZ>::Ptr &scene);
 
     float _distance_threshold;
     int _iterations;
     Eigen::Matrix<float, 6, 1> _state;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr _model;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr _scene;
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& _model;
     pcl::VoxelGrid<pcl::PointXYZ> _voxel_filter;
-    
-    void set_model(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &model) const;
+    ScanMatchingViewer _viewer;
 };

@@ -3,6 +3,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 /**
   * @file viewer.h
@@ -10,19 +11,23 @@
   * @date 1/31/22
  */
 
-class Viewer
+class ScanMatchingViewer
 {
 public:
-    explicit Viewer(const std::string &name);
+    explicit ScanMatchingViewer(const std::string &name);
     
-    ~Viewer() = default;
+    ~ScanMatchingViewer() = default;
     
-    void add_pointcloud(std::string id, const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &cloud, double size);
+    void add_model(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, double size = 1.0);
+
+    void add_scene(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, double size = 1.0);
 
     void
     add_pointcloud(std::string id, const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, double size, int r,
                            int g,
                            int b);
+
+    void update(int iterations, float error, const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, const Eigen::Matrix4f& transform);
 
     void set_point_size(std::string id, double size);
 
@@ -30,13 +35,13 @@ public:
     inline void add_normals(std::string id, const typename pcl::PointCloud<T>::Ptr &cloud,
                 const pcl::PointCloud<pcl::Normal>::Ptr &normals, int level, float scale)
     {
-        viewer.addPointCloudNormals<T, pcl::Normal>(cloud, normals, level, scale, id);
+        _viewer.addPointCloudNormals<T, pcl::Normal>(cloud, normals, level, scale, id);
     }
-    
-    void show_viewer();
-    
-    void add_point(const std::string &id, Eigen::Vector4d &matrix, double size, int r, int g, int b);
 
+    pcl::visualization::PCLVisualizer& viewer();
+    
 private:
-    pcl::visualization::PCLVisualizer viewer;
+    pcl::visualization::PCLVisualizer _viewer;
+    static constexpr float _bckgr_gray_level = 0.0;
+    static constexpr float _txt_gray_lvl = 1.0 - _bckgr_gray_level;
 };
