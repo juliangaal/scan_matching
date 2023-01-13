@@ -1,0 +1,8 @@
+[fpfh]
+normal_k = 10
+
+[sac_ia]
+resolution = 2.0
+
+[gicp]
+resolution = 2.0

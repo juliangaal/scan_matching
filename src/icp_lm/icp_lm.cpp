@@ -1,8 +1,4 @@
-//
-// Created by julian on 29.03.22.
-//
-
-#include "icp_LM.h"
+#include "icp_lm.h"
 #include "utils.h"
 
 #include <fmt/printf.h>
@@ -45,7 +41,7 @@ Eigen::Matrix4f ICP_LM::align(const pcl::PointCloud<pcl::PointXYZ>::Ptr &scene)
     Eigen::Vector3f t = Eigen::Vector3f::Zero();
     std::tie(R, t) = state_2_rot_trans(_state);
     
-    for (int j = 0; j < _iterations; j++)
+    for (size_t j = 0; j < _iterations; j++)
     {
         _viewer.viewer().spinOnce();
         
@@ -64,7 +60,7 @@ Eigen::Matrix4f ICP_LM::align(const pcl::PointCloud<pcl::PointXYZ>::Ptr &scene)
         float chi = 0.f;
 
         // correspondences (nearest neighbor, normals) are calculated
-        for (int i = 0; i < scene->size(); ++i)
+        for (size_t i = 0; i < scene->size(); ++i)
         {
             const Eigen::Vector3f &scene_point = ((*scene)[i]).getVector3fMap();
             const Eigen::Vector3f &corr_point = ((*_model)[correspondences[i][0]]).getVector3fMap();
@@ -88,7 +84,7 @@ Eigen::Matrix4f ICP_LM::align(const pcl::PointCloud<pcl::PointXYZ>::Ptr &scene)
         float chi_new = 0;
         
         // recalculate error
-        for (int i = 0; i < scene->size(); ++i)
+        for (size_t i = 0; i < scene->size(); ++i)
         {
             const Eigen::Vector3f &scene_point = ((*scene)[i]).getVector3fMap();
             const Eigen::Vector3f &corr_point = ((*_model)[correspondences[i][0]]).getVector3fMap();
@@ -134,6 +130,7 @@ Eigen::Matrix4f ICP_LM::align(const pcl::PointCloud<pcl::PointXYZ>::Ptr &scene)
 
 Eigen::Matrix4f ICP_LM::align_ceres(const pcl::PointCloud<pcl::PointXYZ>::Ptr &scene)
 {
+    [[maybe_unused]] auto s = scene->size();
     // pcl::copyPointCloud(*scene, *_scene);
     // StopWatch time, total_time;
 

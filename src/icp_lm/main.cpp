@@ -3,7 +3,8 @@
 //
 
 #include "viewer.h"
-#include "icp_LM.h"
+#include "icp_lm.h"
+#include "icp_lm_params.h"
 #include "utils.h"
 
 #include <thread>
@@ -17,7 +18,7 @@
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/console/time.h>   // TicToc
+#include <pcl/console/time.h>  
 
 using namespace std::chrono_literals;
 typedef pcl::PointXYZ PointT;
@@ -31,7 +32,7 @@ void preprocess(typename pcl::PointCloud<T>::Ptr &cloud, float scale = 1000.f)
     pcl::Indices indices;
     pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
 
-    // demean pcl
+    // demean pcl for normal calculation
     Eigen::Vector4f centroid;
     pcl::compute3DCentroid(*cloud, centroid);
     pcl::demeanPointCloud(*cloud, centroid, *cloud);
@@ -45,20 +46,9 @@ void preprocess(typename pcl::PointCloud<T>::Ptr &cloud, float scale = 1000.f)
     }
 }
 
-// void
-// keyboardEventOccurred (const pcl::visualization::KeyboardEvent& event,
-//                        void* nothing)
-// {
-//   //if (event.getKeySym () == "space" && event.keyDown ())
-  
-//   next_iteration = true;
-// }
-
 int main()
 {
-    float grid_size = 1;
-    int iterations = 20;
-    float scale = 1000.f;
+    ICP_LM_Params params(std::filesystem::path(PARAMS_DIR) / "icp_lm.toml");
     
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tr(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::PointCloud<pcl::PointXYZ>::Ptr model(new pcl::PointCloud<pcl::PointXYZ>());
@@ -69,8 +59,8 @@ int main()
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
     file2pcd<pcl::PointXYZ>(scene, "../data/bun045_UnStructured.pcd");
     
-    preprocess<pcl::PointXYZ>(model, scale);
-    preprocess<pcl::PointXYZ>(scene, scale);
+    preprocess<pcl::PointXYZ>(model, params.scale);
+    preprocess<pcl::PointXYZ>(scene, params.scale);
     
     pcl::PointCloud<pcl::PointXYZ>::Ptr model_t(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::copyPointCloud(*model, *model_t);
@@ -82,13 +72,13 @@ int main()
     pcl::VoxelGrid<pcl::PointXYZ> sor;
     sor.setInputCloud(model_t);
 
-    sor.setLeafSize (grid_size, grid_size, grid_size);
+    sor.setLeafSize (params.voxel_size, params.voxel_size, params.voxel_size);
     sor.filter(*model_t);
 
     sor.setInputCloud(scene_t);
     sor.filter(*scene_t);
 
-    ICP_LM icp(model, 1, iterations);
+    ICP_LM icp(model, params.distance_threshold, params.iterations);
     icp.align(scene);    
     return 0;
 }

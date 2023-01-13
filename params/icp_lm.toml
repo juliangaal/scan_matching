@@ -1,0 +1,5 @@
+[icp_lm]
+iterations = 20
+voxel_size = 1.0
+distance_threshold = 1.0
+scale = 1000.0
